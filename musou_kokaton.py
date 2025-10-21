@@ -141,14 +141,15 @@ class Beam(pg.sprite.Sprite):
     """
     ビームに関するクラス
     """
-    def __init__(self, bird: Bird):
+    def __init__(self, bird: Bird, angle0: float = 0):
         """
         ビーム画像Surfaceを生成する
         引数 bird：ビームを放つこうかとん
+        引数：angle0：初期値0
         """
         super().__init__()
         self.vx, self.vy = bird.dire
-        angle = math.degrees(math.atan2(-self.vy, self.vx))
+        angle = math.degrees(math.atan2(-self.vy, self.vx)) + angle0
         self.image = pg.transform.rotozoom(pg.image.load(f"fig/beam.png"), angle, 1.0)
         self.vx = math.cos(math.radians(angle))
         self.vy = -math.sin(math.radians(angle))
@@ -166,6 +167,38 @@ class Beam(pg.sprite.Sprite):
         if check_bound(self.rect) != (True, True):
             self.kill()
 
+
+class NeoBeam(pg.sprite.Sprite):  # 追加機能6
+    """
+    弾幕に関するクラス
+    """
+    def __init__(self, bird: Bird, num: int):
+        """
+        追加のビーム画像Surfaceを生成する
+        引数 bird：ビームを放つこうかとん
+        引数 num：ビーム数
+        """
+        self.bird = bird
+        self.num = num
+
+    def gen_beams(self) -> list[Beam]:
+        """
+        ‐50°～+50°の角度の範囲で指定ビーム数の分だけBeamインスタンスを生成
+        戻り値：生成したビームのリスト
+        """
+        beams = []
+        if self.num == 1:
+            step = 0
+        else:
+            step = 100 // (self.num - 1)
+
+        angles = list(range(-50, 51, step))
+        
+        for i in angles:
+            beams.append(Beam(self.bird, i))
+        
+        return beams
+        
 
 class Explosion(pg.sprite.Sprite):
     """
@@ -262,7 +295,10 @@ def main():
             if event.type == pg.QUIT:
                 return 0
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
-                beams.add(Beam(bird))
+                if pg.key.get_pressed()[pg.K_LSHIFT]:  # 追加機能6 
+                    beams.add(NeoBeam(bird, 5).gen_beams())
+                else:
+                    beams.add(Beam(bird, 0))
         screen.blit(bg_img, [0, 0])
 
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
