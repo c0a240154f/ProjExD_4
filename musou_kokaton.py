@@ -427,7 +427,7 @@ def main():
                     beams.add(Beam(bird, 0))
             #課題2
             if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
-                if score.value >= 50:
+                if score.value >= 200:
                     """
                     ここかえてるよ
                     """
