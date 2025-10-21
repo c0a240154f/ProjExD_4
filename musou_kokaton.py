@@ -274,13 +274,32 @@ class Score:
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         screen.blit(self.image, self.rect)
 
+class Gravity(pg.sprite.Sprite):
+    """
+    課題2: 重力に関するクラス
+    """
+    def __init__(self,life: int):
+        super().__init__()
+        self.image = pg.Surface((WIDTH, HEIGHT))
+        pg.draw.rect(self.image, (0, 0, 0), (0, 0, WIDTH, HEIGHT))
+        self.image.set_alpha(128)
+        self.life = life
+        self.rect = self.image.get_rect()
+
+    def update(self):
+        #発動時間
+        self.life -= 1
+        if self.life <= 0:
+            self.kill()
 
 def main():
     pg.display.set_caption("真！こうかとん無双")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.image.load(f"fig/pg_bg.jpg")
     score = Score()
-
+    #課題2
+    emys = pg.sprite.Group()
+    gras = pg.sprite.Group()
     bird = Bird(3, (900, 400))
     bombs = pg.sprite.Group()
     beams = pg.sprite.Group()
@@ -299,6 +318,17 @@ def main():
                     beams.add(NeoBeam(bird, 5).gen_beams())
                 else:
                     beams.add(Beam(bird, 0))
+            #課題2
+            if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
+                if score.value >= 50:
+                    """
+                    ここかえてるよ
+                    """
+                    gras.add(Gravity(400))
+                    score.value -= 50
+                    """
+                    ここかえてるよ
+                    """
         screen.blit(bg_img, [0, 0])
 
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
@@ -318,6 +348,15 @@ def main():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             score.value += 1  # 1点アップ
 
+        #課題2
+        for emy in pg.sprite.groupcollide(emys, gras, True, False).keys():
+            exps.add(Explosion(emy, 100))
+            score.value += 10
+        
+        for bomb in pg.sprite.groupcollide(bombs, gras, True, False).keys():
+            exps.add(Explosion(bomb, 50))
+            score.value += 1
+
         for bomb in pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト
             bird.change_img(8, screen)  # こうかとん悲しみエフェクト
             score.update(screen)
@@ -332,6 +371,9 @@ def main():
         emys.draw(screen)
         bombs.update()
         bombs.draw(screen)
+        #課題2
+        gras.update()
+        gras.draw(screen)
         exps.update()
         exps.draw(screen)
         score.update(screen)
