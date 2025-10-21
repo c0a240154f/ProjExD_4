@@ -72,6 +72,9 @@ class Bird(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = xy
         self.speed = 10
+        # 追加機能４：無敵状態
+        self.state = "normal"  # 状態（通常: "normal", 無敵: "hyper"）
+        self.hyper_life = 0    # 無敵状態の残り時間
 
     def change_img(self, num: int, screen: pg.Surface):
         """
@@ -93,12 +96,23 @@ class Bird(pg.sprite.Sprite):
             if key_lst[k]:
                 sum_mv[0] += mv[0]
                 sum_mv[1] += mv[1]
+        if key_lst[pg.K_LSHIFT]:  # 左Shiftキーが押されていたら
+            self.speed = 20  # 速度を20に設定
+        else:
+            self.speed = 10  # 押されていなければ速度を10（デフォルト）に戻す
         self.rect.move_ip(self.speed*sum_mv[0], self.speed*sum_mv[1])
         if check_bound(self.rect) != (True, True):
             self.rect.move_ip(-self.speed*sum_mv[0], -self.speed*sum_mv[1])
         if not (sum_mv[0] == 0 and sum_mv[1] == 0):
             self.dire = tuple(sum_mv)
             self.image = self.imgs[self.dire]
+
+        if self.state == "hyper":
+            self.image = pg.transform.laplacian(self.image)  # ラプラシアンフィルタ適用で無敵状態を表現
+            self.hyper_life -= 1  # 無敵時間を1減算
+            if self.hyper_life < 0:
+                self.state = "normal"  # 0未満になったら通常状態に戻す
+
         screen.blit(self.image, self.rect)
 
 
@@ -299,6 +313,11 @@ def main():
                     beams.add(NeoBeam(bird, 5).gen_beams())
                 else:
                     beams.add(Beam(bird, 0))
+            if event.type == pg.KEYDOWN and event.key == pg.K_RSHIFT: # 右Shiftキーが押されたら
+                if score.value > 100:  # スコアが100より大きければ
+                    bird.state = "hyper"
+                    bird.hyper_life = 500  # 発動時間を500に設定 
+                    score.value -= 100     # スコアを100消費
         screen.blit(bg_img, [0, 0])
 
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
@@ -319,11 +338,16 @@ def main():
             score.value += 1  # 1点アップ
 
         for bomb in pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト
-            bird.change_img(8, screen)  # こうかとん悲しみエフェクト
-            score.update(screen)
-            pg.display.update()
-            time.sleep(2)
-            return
+            if bird.state == "hyper":  # 無敵状態（"hyper"）の場合 
+                exps.add(Explosion(bomb, 50))  # 爆発エフェクト
+                score.value += 1  # スコアを1アップ 
+            else:
+                # 通常状態（"normal"）の場合は、元のゲームオーバー処理
+                bird.change_img(8, screen)  # こうかとん悲しみエフェクト
+                score.update(screen)
+                pg.display.update()
+                time.sleep(2)
+                return
 
         bird.update(key_lst, screen)
         beams.update()
