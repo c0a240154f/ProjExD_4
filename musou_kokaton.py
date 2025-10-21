@@ -482,8 +482,8 @@ def main():
             else:
                 # 通常状態（"normal"）の場合は、元のゲームオーバー処理
                 if getattr(bomb, "state", "active") == "inactive":
-                continue
-            bird.change_img(8, screen)  # こうかとん悲しみエフェクト
+                    continue
+                bird.change_img(8, screen)  # こうかとん悲しみエフェクト
                 score.update(screen)
                 pg.display.update()
                 time.sleep(2)
